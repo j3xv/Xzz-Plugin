@@ -19,11 +19,16 @@ public class OreGui implements CommandExecutor{
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String labe,@NotNull String[] arg) {
 
+        if(!(sender instanceof Player)){
+            sender.sendMessage("Only Player Can Use That");
+        }
 
-       Inventory gui = Bukkit.createInventory(null, 27, "Main");
-       Player p = (Player) sender;
+        Player p = (Player) sender;
+        
+       Inventory gui = Bukkit.createInventory(null, 27, "OreMain");
        
-
+       
+        
        ItemStack diamond = new ItemStack(Material.DIAMOND_BLOCK);
        ItemStack gold = new ItemStack(Material.GOLD_BLOCK);
        ItemStack iron = new ItemStack(Material.IRON_BLOCK);
@@ -65,6 +70,7 @@ public class OreGui implements CommandExecutor{
        gui.setItem(22, coal);
 
         p.openInventory(gui);
+        sender.sendMessage("lol");
         return true;
     }
     
