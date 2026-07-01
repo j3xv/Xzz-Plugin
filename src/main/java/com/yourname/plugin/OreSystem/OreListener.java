@@ -14,56 +14,109 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+
+import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public class OreListener implements Listener {
-    public  Set<UUID> waitingDescripion = new HashSet<>();
-    public int DiamondChance = 10;
+
+    public Set<UUID> waitingDescripion = new HashSet<>();
+
+    public int DiamondChance = 0;
+    public String DiamondDescription = "";
 
     @EventHandler
-    public void onClick(InventoryClickEvent event){
-        
+    public void onClick(InventoryClickEvent event) {
+
         String title = event.getView().getTitle();
 
-        if(title.equals("OreMain")){
+        if (title.equals("OreMain")) {
+
             event.setCancelled(true);
-            if(event.getCurrentItem() == null) return;
-            Inventory Diamondgui = Bukkit.createInventory(null, 27, "Diamond Setting");
+
+            if (event.getCurrentItem() == null)
+                return;
+
+            Inventory diamondGui = Bukkit.createInventory(null, 27, "Diamond Setting");
+
             Player player = (Player) event.getWhoClicked();
+
+            // Clock
             ItemStack diachen = new ItemStack(Material.CLOCK);
-            ItemStack descripion = new ItemStack(Material.INK_SAC);
+            ItemMeta chanceMeta = diachen.getItemMeta();
+            chanceMeta.displayName(Component.text("Diamond Chance: " + DiamondChance));
+            diachen.setItemMeta(chanceMeta);
 
-            ItemMeta meta = diachen.getItemMeta();
-            meta.displayName(Component.text("Diamond Chance: " + DiamondChance));
-            diachen.setItemMeta(meta);
+            // Description
+            ItemStack description = new ItemStack(Material.INK_SAC);
+            ItemMeta descMeta = description.getItemMeta();
+            descMeta.displayName(Component.text("Description"));
+            descMeta.lore(List.of(
+                    Component.text(DiamondDescription)
+            ));
+            description.setItemMeta(descMeta);
 
-            Diamondgui.setItem(12, diachen);
-            Diamondgui.setItem(14, descripion);
-            player.openInventory(Diamondgui);
+            diamondGui.setItem(12, diachen);
+            diamondGui.setItem(14, description);
 
-
-            
-            
+            player.openInventory(diamondGui);
         }
 
-        if(title.equals("Diamond Setting")){
+        if (title.equals("Diamond Setting")) {
+
             event.setCancelled(true);
-            if(event.getCurrentItem() == null) return;
-            if(event.getCurrentItem().getType() == Material.CLOCK){
+
+            if (event.getCurrentItem() == null)
+                return;
+
+            // Chance
+            if (event.getCurrentItem().getType() == Material.CLOCK) {
+
                 DiamondChance += 10;
+
+                if (DiamondChance > 100) {
+                    DiamondChance = 0;
+                }
 
                 ItemStack item = event.getCurrentItem();
                 ItemMeta meta = item.getItemMeta();
 
-                meta.displayName(Component.text("Diamond Chance: "+ DiamondChance));
+                meta.displayName(Component.text("Diamond Chance: " + DiamondChance));
 
                 item.setItemMeta(meta);
+            }
 
-                if (DiamondChance == 100) {
-                    DiamondChance = 0;
-                }
+            // Description
+            if (event.getCurrentItem().getType() == Material.INK_SAC) {
+
+                Player player = (Player) event.getWhoClicked();
+
+                waitingDescripion.add(player.getUniqueId());
+
+                player.closeInventory();
+
+                player.sendMessage("§eEnter Description...");
             }
         }
+    }
 
+    @EventHandler
+    public void onChat(AsyncChatEvent event) {
+
+        Player player = event.getPlayer();
+
+        if (!waitingDescripion.contains(player.getUniqueId())) {
+            return;
+        }
+
+        event.setCancelled(true);
+
+        DiamondDescription = PlainTextComponentSerializer.plainText()
+                .serialize(event.message());
+
+        waitingDescripion.remove(player.getUniqueId());
+
+        player.sendMessage("§aDescription Saved!");
     }
 }
